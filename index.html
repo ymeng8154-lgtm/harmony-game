@@ -24,21 +24,25 @@
             overflow: hidden; color: var(--text-main);
         }
 
-        .admin-btn {
-            position: absolute; top: 15px; right: 15px; padding: 5px 10px; font-size: 12px;
-            background: rgba(0, 242, 254, 0.1); border: 1px solid var(--border-glow);
-            color: var(--border-glow); border-radius: 4px; cursor: pointer; z-index: 1000; transition: all 0.3s;
-        }
-        .admin-btn:hover { background: var(--border-glow); color: var(--bg-dark); box-shadow: 0 0 10px var(--border-glow); }
-
         .header { width: 340px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px; }
-        h1 { margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--border-glow); color: #fff; }
+        
+        /* 修改：让标题看起来可以点击，并移除默认的外边距 */
+        h1 { 
+            margin: 0; 
+            font-size: 28px; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 0 0 10px var(--border-glow); 
+            color: #fff; 
+            cursor: pointer; 
+            transition: transform 0.2s;
+        }
+        h1:active { transform: scale(0.95); }
         
         .score-container { 
             background: rgba(0, 0, 0, 0.5); padding: 5px 15px; border: 1px solid var(--grid-line); 
             border-radius: 4px; text-align: center; cursor: pointer; transition: all 0.3s;
         }
-        /* 管理员模式下的分数特效 */
         .score-container.admin-active { border-color: var(--admin-glow); box-shadow: 0 0 10px rgba(252, 204, 46, 0.3); }
         #score { font-size: 20px; font-weight: bold; color: var(--border-glow); }
         .score-container.admin-active #score { color: var(--admin-glow); }
@@ -198,7 +202,6 @@
                 this.activeItem = null; this.selectedIndices = [];
                 this.isAdmin = false; 
                 this.mask.style.display = 'none';
-                document.getElementById('admin-trigger').innerText = 'ADMIN';
                 document.getElementById('score-box').classList.remove('admin-active');
                 this.renderBg(); this.addTile(); this.addTile();
                 this.updateItemUI(); this.draw();
@@ -207,7 +210,6 @@
             adminMode() {
                 if (this.isAdmin) {
                     this.isAdmin = false;
-                    document.getElementById('admin-trigger').innerText = 'ADMIN';
                     document.getElementById('score-box').classList.remove('admin-active');
                     alert("管理者模式已退出。");
                     this.updateItemUI();
@@ -217,7 +219,6 @@
                 const password = prompt("请输入管理者秘钥：");
                 if (password === "admin888") {
                     this.isAdmin = true;
-                    document.getElementById('admin-trigger').innerText = 'ADMIN (ON)';
                     document.getElementById('score-box').classList.add('admin-active');
                     alert("权限已确认。维度修改器已上线，点击分数可直接改写。");
                     this.updateItemUI();
@@ -226,7 +227,6 @@
                 }
             },
 
-            // 新增：管理员改分功能
             adminEditScore() {
                 if (!this.isAdmin) return;
                 const input = prompt("【核心干预】请输入目标分数：", this.score);
@@ -234,7 +234,6 @@
                     const newScore = parseInt(input);
                     if (!isNaN(newScore)) {
                         this.score = newScore;
-                        // 同步道具进度，防止瞬间触发大量道具或进度卡死
                         this.lastItemScore = Math.floor(newScore / 1000) * 1000;
                         this.draw();
                     } else {
