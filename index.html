@@ -26,16 +26,9 @@
 
         .header { width: 340px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px; }
         
-        /* 修改：让标题看起来可以点击，并移除默认的外边距 */
         h1 { 
-            margin: 0; 
-            font-size: 28px; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            text-shadow: 0 0 10px var(--border-glow); 
-            color: #fff; 
-            cursor: pointer; 
-            transition: transform 0.2s;
+            margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; 
+            text-shadow: 0 0 10px var(--border-glow); color: #fff; cursor: pointer; transition: transform 0.2s;
         }
         h1:active { transform: scale(0.95); }
         
@@ -73,13 +66,22 @@
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-gap: 10px; width: 100%; height: 100%; }
         .cell { width: 72.5px; height: 72.5px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--grid-line); border-radius: 4px; }
 
+        /* 滑动动画关键样式 */
         .tile {
             position: absolute; width: 72.5px; height: 72.5px; border-radius: 4px;
             display: flex; justify-content: center; align-items: center;
             font-size: 28px; font-weight: bold; z-index: 10; color: #fff;
-            transition: top 0.12s ease-in-out, left 0.12s ease-in-out, transform 0.1s ease-out;
+            /* 关键：top和left的过渡效果 */
+            transition: top 0.15s ease-in-out, left 0.15s ease-in-out, transform 0.1s ease-out;
             box-shadow: inset 0 2px 3px rgba(255,255,255,0.3), 0 4px 0 rgba(0,0,0,0.5);
             will-change: top, left;
+        }
+
+        /* 新生成方块的缩放动画 */
+        .tile-new { animation: pop-in 0.2s ease-out; }
+        @keyframes pop-in {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         .tile.selectable { cursor: pointer; animation: target-glow 0.8s infinite alternate; z-index: 20; }
@@ -185,25 +187,36 @@
         };
 
         const game = {
-            size: 4, board: [], score: 0, lastItemScore: 0,
+            size: 4, 
+            board: [], // 存储结构改为对象：{ val: 2, id: 1 }
+            score: 0, lastItemScore: 0,
+            idCounter: 0, // 用于生成唯一ID
             items: { hammer: 0, swap: 0, merge: 0 },
             discovered: { hammer: false, swap: false, merge: false },
             activeItem: null, selectedIndices: [],
             isAdmin: false, 
             container: document.getElementById('game-container'),
             mask: document.getElementById('over-mask'),
+            tileElements: new Map(), // 存储 ID -> DOM元素的映射
             tileWidth: 72.5, gap: 10,
 
             init() {
-                this.board = Array(16).fill(0);
+                this.board = Array(16).fill(null);
                 this.score = 0; this.lastItemScore = 0;
                 this.items = { hammer: 0, swap: 0, merge: 0 };
                 this.discovered = { hammer: false, swap: false, merge: false };
                 this.activeItem = null; this.selectedIndices = [];
                 this.isAdmin = false; 
+                this.idCounter = 0;
                 this.mask.style.display = 'none';
+                
+                // 清理所有现有方块
+                this.tileElements.forEach(el => el.remove());
+                this.tileElements.clear();
+
                 document.getElementById('score-box').classList.remove('admin-active');
-                this.renderBg(); this.addTile(); this.addTile();
+                this.renderBg(); 
+                this.addTile(); this.addTile();
                 this.updateItemUI(); this.draw();
             },
 
@@ -215,7 +228,6 @@
                     this.updateItemUI();
                     return;
                 }
-
                 const password = prompt("请输入管理者秘钥：");
                 if (password === "admin888") {
                     this.isAdmin = true;
@@ -257,9 +269,7 @@
                 for (let type in this.items) {
                     const slot = document.getElementById(`item-${type}`);
                     document.getElementById(`count-${type}`).innerText = this.isAdmin ? '∞' : this.items[type];
-                    
                     slot.classList.toggle('active', this.activeItem === type);
-                    
                     if (this.discovered[type] || this.isAdmin) {
                         slot.classList.add('discovered');
                         anyDiscovered = true;
@@ -293,30 +303,60 @@
             },
 
             addTile() {
-                const empty = this.board.map((v, i) => v === 0 ? i : null).filter(v => v !== null);
+                const empty = this.board.map((v, i) => v === null ? i : null).filter(v => v !== null);
                 if (empty.length > 0) {
                     const idx = empty[Math.floor(Math.random() * empty.length)];
-                    this.board[idx] = Math.random() < 0.9 ? 2 : 4;
+                    this.board[idx] = {
+                        val: Math.random() < 0.9 ? 2 : 4,
+                        id: this.idCounter++,
+                        isNew: true
+                    };
                     return idx;
                 }
             },
 
             draw() {
-                document.querySelectorAll('.tile').forEach(t => t.remove());
-                this.board.forEach((val, i) => {
-                    if (val !== 0) {
-                        const tile = document.createElement('div');
-                        tile.className = `tile n-${val}`;
-                        tile.innerText = val;
-                        tile.style.top = `${this.gap + Math.floor(i/4) * (this.tileWidth + this.gap)}px`;
-                        tile.style.left = `${this.gap + (i%4) * (this.tileWidth + this.gap)}px`;
-                        if (this.activeItem) {
-                            tile.classList.add('selectable');
-                            tile.onclick = (e) => { e.stopPropagation(); this.handleTileClick(i); };
+                const currentIds = new Set();
+
+                this.board.forEach((tileData, i) => {
+                    if (tileData !== null) {
+                        currentIds.add(tileData.id);
+                        let el = this.tileElements.get(tileData.id);
+
+                        if (!el) {
+                            el = document.createElement('div');
+                            el.className = `tile n-${tileData.val} ${tileData.isNew ? 'tile-new' : ''}`;
+                            this.container.appendChild(el);
+                            this.tileElements.set(tileData.id, el);
+                            tileData.isNew = false;
                         }
-                        this.container.appendChild(tile);
+
+                        // 更新位置、数值、颜色和点击事件
+                        el.innerText = tileData.val;
+                        el.className = `tile n-${tileData.val}`; // 更新数值颜色类
+                        el.style.top = `${this.gap + Math.floor(i/4) * (this.tileWidth + this.gap)}px`;
+                        el.style.left = `${this.gap + (i%4) * (this.tileWidth + this.gap)}px`;
+                        
+                        if (this.activeItem) {
+                            el.classList.add('selectable');
+                            el.onclick = (e) => { e.stopPropagation(); this.handleTileClick(i); };
+                        } else {
+                            el.classList.remove('selectable');
+                            el.onclick = null;
+                        }
                     }
                 });
+
+                // 移除不在棋盘上的 DOM 元素（即合并消失的）
+                this.tileElements.forEach((el, id) => {
+                    if (!currentIds.has(id)) {
+                        el.style.transform = 'scale(0.8)';
+                        el.style.opacity = '0';
+                        setTimeout(() => el.remove(), 100);
+                        this.tileElements.delete(id);
+                    }
+                });
+
                 document.getElementById('score').innerText = this.score;
             },
 
@@ -328,9 +368,9 @@
             },
 
             handleTileClick(idx) {
-                if (!this.activeItem || this.board[idx] === 0) return;
+                if (!this.activeItem || !this.board[idx]) return;
                 if (this.activeItem === 'hammer') {
-                    this.board[idx] = 0; this.finalizeItem();
+                    this.board[idx] = null; this.finalizeItem();
                 } else if (this.activeItem === 'swap' || this.activeItem === 'merge') {
                     this.selectedIndices.push(idx);
                     if (this.selectedIndices.length === 2) {
@@ -339,9 +379,9 @@
                             [this.board[i1], this.board[i2]] = [this.board[i2], this.board[i1]];
                             this.finalizeItem();
                         } else if (this.activeItem === 'merge') {
-                            if (i1 !== i2 && this.board[i1] === this.board[i2]) {
-                                this.board[i2] *= 2; this.board[i1] = 0;
-                                this.score += this.board[i2]; this.finalizeItem();
+                            if (i1 !== i2 && this.board[i1].val === this.board[i2].val) {
+                                this.board[i2].val *= 2; this.board[i1] = null;
+                                this.score += this.board[i2].val; this.finalizeItem();
                             } else {
                                 this.selectedIndices = []; alert("我就知道有小人！！！数字不同不让合并");
                             }
@@ -373,43 +413,72 @@
 
             move(dir) {
                 if (this.activeItem) return;
-                const prev = JSON.stringify(this.board);
+                const prev = JSON.stringify(this.board.map(b => b ? b.val : 0));
                 const size = 4;
-                let lines = [];
+                
+                // 处理每一行或每一列
                 for (let i = 0; i < size; i++) {
-                    if (dir === 'left' || dir === 'right') lines.push(this.board.slice(i * size, i * size + size));
-                    else lines.push([this.board[i], this.board[i+4], this.board[i+8], this.board[i+12]]);
-                }
-                lines = lines.map(line => {
-                    if (dir === 'right' || dir === 'down') line.reverse();
-                    let nl = line.filter(v => v !== 0);
-                    for (let i = 0; i < nl.length - 1; i++) {
-                        if (nl[i] === nl[i+1]) { nl[i] *= 2; this.score += nl[i]; nl.splice(i + 1, 1); }
+                    let line = [];
+                    for (let j = 0; j < size; j++) {
+                        let idx;
+                        if (dir === 'left') idx = i * size + j;
+                        else if (dir === 'right') idx = i * size + (size - 1 - j);
+                        else if (dir === 'up') idx = j * size + i;
+                        else if (dir === 'down') idx = (size - 1 - j) * size + i;
+                        line.push({ data: this.board[idx], pos: idx });
                     }
-                    while (nl.length < size) nl.push(0);
-                    if (dir === 'right' || dir === 'down') nl.reverse();
-                    return nl;
-                });
-                const nb = Array(16).fill(0);
-                lines.forEach((l, i) => l.forEach((v, j) => {
-                    if (dir === 'left' || dir === 'right') nb[i * size + j] = v;
-                    else nb[j * size + i] = v;
-                }));
-                if (JSON.stringify(nb) !== prev) {
-                    this.board = nb; this.checkItemGain(); this.addTile(); this.draw();
-                    if (this.isGameOver()) this.mask.style.display = 'flex';
+
+                    // 核心算法：合并与压缩
+                    let filtered = line.filter(item => item.data !== null);
+                    let mergedLine = [];
+                    
+                    for (let j = 0; j < filtered.length; j++) {
+                        if (j < filtered.length - 1 && filtered[j].data.val === filtered[j+1].data.val) {
+                            // 合并
+                            let mergedVal = filtered[j].data.val * 2;
+                            this.score += mergedVal;
+                            mergedLine.push({ val: mergedVal, id: filtered[j].data.id }); // 保留前一个ID用于平滑移动
+                            j++; // 跳过下一个
+                        } else {
+                            mergedLine.push(filtered[j].data);
+                        }
+                    }
+
+                    // 补齐 null
+                    while (mergedLine.length < size) mergedLine.push(null);
+
+                    // 写回 board
+                    for (let j = 0; j < size; j++) {
+                        let idx;
+                        if (dir === 'left') idx = i * size + j;
+                        else if (dir === 'right') idx = i * size + (size - 1 - j);
+                        else if (dir === 'up') idx = j * size + i;
+                        else if (dir === 'down') idx = (size - 1 - j) * size + i;
+                        this.board[idx] = mergedLine[j];
+                    }
+                }
+
+                const current = JSON.stringify(this.board.map(b => b ? b.val : 0));
+                if (current !== prev) {
+                    this.draw(); // 第一次 draw 触发移动动画
+                    setTimeout(() => {
+                        this.checkItemGain(); 
+                        this.addTile(); 
+                        this.draw(); // 第二次 draw 显示新方块
+                        if (this.isGameOver()) this.mask.style.display = 'flex';
+                    }, 150); // 这里的延迟应略大于或等于 CSS transition 时间
                 }
             },
 
             isGameOver() {
-                if (this.board.includes(0)) return false;
+                if (this.board.some(b => b === null)) return false;
                 for (let i = 0; i < 16; i++) {
-                    if (i % 4 !== 3 && this.board[i] === this.board[i+1]) return false;
-                    if (i < 12 && this.board[i] === this.board[i+4]) return false;
+                    const val = this.board[i].val;
+                    if (i % 4 !== 3 && this.board[i+1] && val === this.board[i+1].val) return false;
+                    if (i < 12 && this.board[i+4] && val === this.board[i+4].val) return false;
                 }
                 const hasItems = this.isAdmin || Object.values(this.items).some(count => count > 0);
-                if (hasItems) return false;
-                return true;
+                return !hasItems;
             }
         };
 
