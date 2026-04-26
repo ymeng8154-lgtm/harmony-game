@@ -68,6 +68,11 @@
       min-width: 250px;
       max-width: 280px;
       color: #fff;
+      display: none; /* 默认隐藏 */
+    }
+
+    .leaderboard.visible {
+      display: block;
     }
 
     .leaderboard h3 {
@@ -212,8 +217,29 @@
       }
       
       .leaderboard {
-        max-width: 100%;
+        max-width: 600px;
         width: 100%;
+        order: 2;
+        margin-top: 20px;
+      }
+      
+      .game-wrapper {
+        order: 1;
+      }
+      
+      .leaderboard-list {
+        max-height: 300px;
+      }
+    }
+
+    @media (min-width: 851px) {
+      .leaderboard {
+        position: sticky;
+        top: 10px;
+      }
+      
+      .leaderboard-list {
+        max-height: 500px;
       }
     }
 
@@ -377,11 +403,30 @@
         padding: 6px 12px;
       }
     }
+
+    /* 排行榜滚动条美化 */
+    .leaderboard-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .leaderboard-list::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+    }
+
+    .leaderboard-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+    }
+
+    .leaderboard-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
   </style>
 </head>
 <body>
   <!-- 用户名输入弹窗 -->
-  <div class="modal-overlay active" id="usernameModal">
+  <div class="modal-overlay" id="usernameModal">
     <div class="modal-content">
       <h3>🎮 设置玩家昵称</h3>
       <input type="text" id="usernameInput" placeholder="输入你的昵称" maxlength="20">
@@ -464,6 +509,7 @@
     const usernameInput = document.getElementById('usernameInput');
     const startGameBtn = document.getElementById('startGameBtn');
     const leaderboardContent = document.getElementById('leaderboardContent');
+    const leaderboard = document.getElementById('leaderboard');
 
     // ==================== Firebase 排行榜功能 ====================
     function generatePlayerUID() {
@@ -487,7 +533,7 @@
       const scoresRef = query(
         ref(database, 'scores'),
         orderByChild('score'),
-        limitToLast(10)
+        limitToLast(100)
       );
       
       onValue(scoresRef, (snapshot) => {
@@ -992,8 +1038,8 @@
       if(food && gameState===GameState.PLAYING) drawFood();
       if(snake.length && (gameState===GameState.PLAYING || gameState===GameState.GAME_OVER)) drawSnake();
       drawParticles(ctx);
-      if(gameState===GameState.IDLE) drawOverlay('🐍 贪吃蛇', '按空格或方向键开始', '#4ecb71');
-      else if(gameState===GameState.GAME_OVER) drawOverlay('游戏结束', `得分: ${score}  |  方向键或空格重来`, '#e74c3c');
+      if(gameState===GameState.IDLE) drawOverlay('🐍 贪吃蛇', '点击任意位置开始', '#4ecb71');
+      else if(gameState===GameState.GAME_OVER) drawOverlay('游戏结束', `得分: ${score}  |  点击重新开始`, '#e74c3c');
       if(gameState===GameState.PLAYING && score>0) {
         ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold 13px sans-serif'; ctx.textAlign='right';
         ctx.fillText(`🍎 ${score}`, CANVAS_WIDTH-14, 22); ctx.textAlign='start';
@@ -1031,10 +1077,16 @@
       animationFrameId = requestAnimationFrame(gameLoop);
     }
 
+    // ==================== 显示昵称弹窗 ====================
+    function showUsernameModal() {
+      usernameModal.classList.add('active');
+      usernameInput.focus();
+    }
+
     // ==================== 控制函数 ====================
     function startGame() {
       if (!currentPlayer.name) {
-        usernameModal.classList.add('active');
+        showUsernameModal();
         return;
       }
       
@@ -1045,6 +1097,10 @@
       canvasContainer.classList.remove('game-over-glow');
       hintText.textContent = '🎮 游戏进行中 · 方向键/按钮操控';
       hintText.classList.remove('flash');
+      
+      // 显示排行榜
+      leaderboard.classList.add('visible');
+      
       playStartSound();
     }
 
@@ -1061,6 +1117,24 @@
       if(gameState !== GameState.PLAYING) return;
       if(directionQueue.length < 3) directionQueue.push(dirObj);
       else directionQueue[directionQueue.length-1] = dirObj;
+    }
+
+    // ==================== 游戏开始触发 ====================
+    function handleGameStart() {
+      if (usernameModal.classList.contains('active')) return;
+      
+      if (!currentPlayer.name) {
+        // 没有昵称，显示昵称输入弹窗
+        showUsernameModal();
+        return;
+      }
+      
+      // 已有昵称，直接开始游戏
+      if (gameState === GameState.IDLE) {
+        startGame();
+      } else if (gameState === GameState.GAME_OVER) {
+        resetAndStart();
+      }
     }
 
     // ==================== 用户名设置 ====================
@@ -1094,8 +1168,7 @@
 
       if (key === ' ') {
         e.preventDefault();
-        if (gameState === GameState.IDLE) startGame();
-        else if (gameState === GameState.GAME_OVER) resetAndStart();
+        handleGameStart();
         return;
       }
 
@@ -1108,19 +1181,23 @@
       if (dir) {
         e.preventDefault();
         if (gameState === GameState.IDLE) {
-          startGame();
+          handleGameStart();
         } else if (gameState === GameState.GAME_OVER) {
-          resetAndStart();
+          handleGameStart();
         } else {
           pushDirection(dir);
         }
       }
     });
 
-    canvas.addEventListener('click', () => {
+    // 点击画布触发游戏开始
+    canvas.addEventListener('click', (e) => {
       if (usernameModal.classList.contains('active')) return;
-      if (gameState === GameState.IDLE) startGame();
-      else if (gameState === GameState.GAME_OVER) resetAndStart();
+      
+      if (gameState === GameState.IDLE || gameState === GameState.GAME_OVER) {
+        e.stopPropagation();
+        handleGameStart();
+      }
     });
 
     dpadBtns.forEach(btn => {
@@ -1137,9 +1214,9 @@
         if (!dir) return;
 
         if (gameState === GameState.IDLE) {
-          startGame();
+          handleGameStart();
         } else if (gameState === GameState.GAME_OVER) {
-          resetAndStart();
+          handleGameStart();
         } else {
           pushDirection(dir);
         }
@@ -1168,10 +1245,13 @@
       updateScoreDisplay(); updatePowerupUI();
       hintText.classList.add('flash');
       canvasContainer.classList.remove('game-over-glow');
+      // 排行榜初始隐藏
+      leaderboard.classList.remove('visible');
+      
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       animationFrameId = requestAnimationFrame(gameLoop);
       
-      // 启动排行榜监听
+      // 启动排行榜监听（在后台运行）
       listenLeaderboard();
     }
     init();
