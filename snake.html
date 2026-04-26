@@ -112,7 +112,7 @@
       min-width: 250px;
       max-width: 280px;
       color: #fff;
-      display: block; 
+      display: none; /* 默认隐藏 */
       transition: all 0.3s ease;
     }
 
@@ -645,7 +645,7 @@
     const leaderboardMask = document.getElementById('leaderboardMask');
 
     // 排行榜显示状态
-    let leaderboardVisible = true; 
+    let leaderboardVisible = false; 
     let previousScoresCount = 0;
 
     // ==================== Firebase 排行榜功能 ====================
@@ -1287,7 +1287,10 @@
       hintText.textContent = '🎮 游戏进行中 · 方向键/按钮操控';
       hintText.classList.remove('flash');
       
-      showLeaderboard();
+      // 桌面端自动显示排行榜
+      if (window.innerWidth > 850) {
+        showLeaderboard();
+      }
       playStartSound();
     }
 
@@ -1450,8 +1453,8 @@
       updateScoreDisplay(); updatePowerupUI();
       hintText.classList.add('flash');
       canvasContainer.classList.remove('game-over-glow');
-      leaderboardVisible = true;
-      leaderboard.classList.add('visible');
+      leaderboardVisible = false;
+      leaderboard.classList.remove('visible');
       
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       animationFrameId = requestAnimationFrame(gameLoop);
