@@ -3,27 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🐍 贪吃蛇 · 全球实时竞技版</title>
-  
+  <title>🐍 贪吃蛇 · 全球实时版</title>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // FIXME: 替换为你自己的 Firebase 配置
     const firebaseConfig = {
       apiKey: "AIzaSyCWsI-pxmzZpT3lsBauAizFiUuKdxF1MYA",
       authDomain: "harmony-game-ab90f.firebaseapp.com",
       projectId: "harmony-game-ab90f",
       storageBucket: "harmony-game-ab90f.firebasestorage.app",
       messagingSenderId: "623058222252",
-      appId: "1:623058222252:web:37194d443d552744b53309",
-      measurementId: "G-0V49SCW2L0"
+      appId: "1:623058222252:web:c5089e10a72b5d4db53309",
+      measurementId: "G-D19SLRF6KS"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 挂载到全局方便游戏脚本调用
+    // 挂载到 window 方便游戏逻辑调用
     window.fbHelper = { db, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp };
   </script>
 
@@ -35,23 +34,28 @@
       --gold: #ffd700;
       --accent: #4ecb71;
       --danger: #e74c3c;
+      --highlight: #5b8cff;
+      --btn-bg: rgba(30, 30, 50, 0.85);
       --btn-border: #3a3a55;
+      --btn-active: #4ecb71;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
       background: var(--bg);
       display: flex;
       flex-direction: column;
+      justify-content: center;
       align-items: center;
       min-height: 100vh;
       font-family: 'Segoe UI', sans-serif;
       padding: 10px;
-      color: var(--text);
-      overflow-x: hidden;
+      background-image: radial-gradient(ellipse at 30% 20%, rgba(78, 203, 113, 0.06) 0%, transparent 60%);
+      touch-action: manipulation;
     }
 
-    /* 侧边实时排行榜 - 悬浮在左上角 */
+    /* 2. 实时排行榜样式 */
     #liveLeaderboard {
       position: fixed;
       left: 15px;
@@ -60,57 +64,43 @@
       background: var(--panel-bg);
       border: 1px solid var(--btn-border);
       border-radius: 12px;
-      padding: 12px;
+      padding: 10px;
       backdrop-filter: blur(10px);
-      z-index: 100;
+      z-index: 1000;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    #liveLeaderboard h3 {
-      font-size: 0.8rem;
-      color: var(--gold);
-      text-align: center;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .rank-item {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .rank-item:last-child { border: none; }
+    #liveLeaderboard h3 { font-size: 0.8rem; color: var(--gold); text-align: center; margin-bottom: 8px; }
+    .rank-item { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .rank-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #ccc; }
     .rank-score { color: var(--accent); font-weight: bold; }
 
-    /* 原有游戏样式保持 */
-    .game-wrapper { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 10px; margin-top: 40px; }
-    .game-header { display: flex; justify-content: space-between; padding: 10px 15px; background: var(--panel-bg); border: 1px solid var(--btn-border); border-radius: 14px; }
-    .canvas-container { position: relative; width: 100%; aspect-ratio: 1/1; background: #111827; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    canvas { width: 100%; height: 100%; display: block; }
-    .dpad-container { display: grid; grid-template-columns: repeat(3, 75px); gap: 8px; justify-content: center; margin-top: 10px; }
-    .dpad-btn { background: rgba(30, 30, 50, 0.8); border: 2px solid var(--btn-border); border-radius: 15px; color: white; font-size: 1.8rem; height: 75px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    
+    /* 游戏核心样式 */
+    .game-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; max-width: 600px; }
+    .game-header { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 16px; background: var(--panel-bg); border: 1px solid var(--btn-border); border-radius: 14px; color: #fff; }
+    .canvas-container { position: relative; border-radius: 16px; overflow: hidden; width: 100%; aspect-ratio: 1 / 1; background: #111827; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .dpad-container { display: grid; grid-template-columns: repeat(3, 80px); gap: 6px; margin-top: 8px; }
+    .dpad-btn { background: var(--btn-bg); border: 2px solid var(--btn-border); border-radius: 16px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #ccc; cursor: pointer; }
+    .dpad-btn:active { background: var(--btn-active); transform: scale(0.95); }
+
     @media (max-width: 800px) {
-        #liveLeaderboard { position: static; width: 100%; max-width: 600px; margin-bottom: 10px; order: -1; }
-        .game-wrapper { margin-top: 0; }
+      #liveLeaderboard { position: relative; width: 100%; max-width: 600px; left: 0; top: 0; margin-bottom: 10px; }
     }
   </style>
 </head>
 <body>
 
   <div id="liveLeaderboard">
-    <h3>🏆 实时排行</h3>
-    <div id="rankList">加载中...</div>
+    <h3>🏆 全球排行</h3>
+    <div id="rankList">同步中...</div>
   </div>
 
   <div class="game-wrapper">
     <div class="game-header">
-      <div id="scoreDisplay" style="color: var(--accent); font-weight: bold; font-size: 1.2rem;">🍎 0</div>
-      <div style="font-size: 0.9rem;">速度: <span id="speedLevel">1</span></div>
+      <div id="scoreDisplay" style="color:var(--accent); font-weight:bold; font-size:1.2rem;">🍎 0</div>
+      <div id="speedLevelDisplay">速度: <span id="speedLevel">1</span></div>
+      <div id="powerupHint" style="display:none; color:var(--gold)"></div>
     </div>
 
     <div class="canvas-container" id="canvasContainer">
@@ -118,39 +108,81 @@
     </div>
 
     <div class="dpad-container">
-      <div style="grid-column: 2" class="dpad-btn" onclick="handleInput('up')">⬆️</div>
-      <div style="grid-column: 1; grid-row: 2" class="dpad-btn" onclick="handleInput('left')">⬅️</div>
-      <div style="grid-column: 3; grid-row: 2" class="dpad-btn" onclick="handleInput('right')">➡️</div>
-      <div style="grid-column: 2; grid-row: 3" class="dpad-btn" onclick="handleInput('down')">⬇️</div>
+      <div style="grid-column:2" class="dpad-btn" data-dir="up">⬆️</div>
+      <div style="grid-column:1; grid-row:2" class="dpad-btn" data-dir="left">⬅️</div>
+      <div style="grid-column:3; grid-row:2" class="dpad-btn" data-dir="right">➡️</div>
+      <div style="grid-column:2; grid-row:3" class="dpad-btn" data-dir="down">⬇️</div>
     </div>
+    <p id="hintText" style="color:#888; font-size:0.8rem; margin-top:5px;">💡 点击画布或方向键开始游戏</p>
   </div>
 
   <script>
     (function() {
-      // --- 游戏基础设置 ---
+      // --- 游戏引擎变量 ---
       const canvas = document.getElementById('gameCanvas');
       const ctx = canvas.getContext('2d');
-      const scoreDisplay = document.getElementById('scoreDisplay');
       const COLS = 30, ROWS = 30, CELL = 20;
       canvas.width = COLS * CELL; canvas.height = ROWS * CELL;
 
+      const GameState = { IDLE: 'idle', PLAYING: 'playing', GAME_OVER: 'gameOver' };
+      let gameState = GameState.IDLE;
       let snake = [], direction = {row:0, col:1}, food = null, score = 0;
-      let gameState = 'IDLE', lastTime = 0, interval = 150;
+      let lastTime = 0, interval = 150;
 
+      // --- 3. Firebase 实时监听逻辑 ---
+      function setupLeaderboard() {
+        if (!window.fbHelper) { setTimeout(setupLeaderboard, 500); return; }
+        const { db, collection, query, orderBy, limit, onSnapshot } = window.fbHelper;
+        const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
+
+        onSnapshot(q, (snapshot) => {
+          const rankList = document.getElementById('rankList');
+          let html = '';
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            html += `<div class="rank-item"><span class="rank-name">${d.name}</span><span class="rank-score">${d.score}</span></div>`;
+          });
+          rankList.innerHTML = html || '暂无数据';
+        });
+      }
+
+      // --- 核心游戏逻辑 ---
       function initGame() {
         snake = [{row:15, col:10}, {row:15, col:11}, {row:15, col:12}];
         direction = {row:0, col:1};
-        score = 0; scoreDisplay.textContent = `🍎 ${score}`;
+        score = 0;
         spawnFood();
-        gameState = 'PLAYING';
+        gameState = GameState.PLAYING;
       }
 
       function spawnFood() {
         food = { row: Math.floor(Math.random()*ROWS), col: Math.floor(Math.random()*COLS) };
       }
 
+      async function endGame() {
+        gameState = GameState.GAME_OVER;
+        const finalScore = score;
+        
+        if (finalScore > 0) {
+          // 4. 上传分数逻辑
+          setTimeout(async () => {
+            const name = prompt(`游戏结束！得分：${finalScore}\n请输入你的昵称登入排行榜：`, "匿名玩家");
+            if (name && window.fbHelper) {
+              const { db, collection, addDoc, serverTimestamp } = window.fbHelper;
+              try {
+                await addDoc(collection(db, "scores"), {
+                  name: name.substring(0, 8),
+                  score: finalScore,
+                  time: serverTimestamp()
+                });
+              } catch (e) { console.error("上传失败", e); }
+            }
+          }, 100);
+        }
+      }
+
       function update() {
-        if (gameState !== 'PLAYING') return;
+        if (gameState !== GameState.PLAYING) return;
         const head = snake[snake.length-1];
         const newHead = { row: head.row + direction.row, col: head.col + direction.col };
 
@@ -163,7 +195,7 @@
         snake.push(newHead);
         if (newHead.row === food.row && newHead.col === food.col) {
           score += 10;
-          scoreDisplay.textContent = `🍎 ${score}`;
+          document.getElementById('scoreDisplay').textContent = `🍎 ${score}`;
           spawnFood();
         } else {
           snake.shift();
@@ -172,82 +204,45 @@
 
       function draw() {
         ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // 食物
+        // 画食物
         ctx.fillStyle = '#e74c3c'; ctx.beginPath();
         ctx.arc(food.col*CELL+10, food.row*CELL+10, 8, 0, Math.PI*2); ctx.fill();
-        // 蛇
+        // 画蛇
         snake.forEach((s, i) => {
           ctx.fillStyle = i === snake.length-1 ? '#4ecb71' : '#2e7d32';
           ctx.fillRect(s.col*CELL+1, s.row*CELL+1, CELL-2, CELL-2);
         });
       }
 
-      function gameLoop(time) {
-        if (time - lastTime > interval) { update(); draw(); lastTime = time; }
-        requestAnimationFrame(gameLoop);
+      function loop(t) {
+        if (t - lastTime > interval) { update(); draw(); lastTime = t; }
+        requestAnimationFrame(loop);
       }
 
-      // --- 2. Firebase 核心逻辑：提交分数 ---
-      async function endGame() {
-        gameState = 'GAMEOVER';
-        const finalScore = score;
-        
-        if (finalScore > 0) {
-          // 延迟一点点弹出，避免阻塞渲染
-          setTimeout(async () => {
-            const name = prompt(`游戏结束！得分：${finalScore}\n请输入昵称展示在左侧榜单：`, "匿名特工");
-            if (name && window.fbHelper) {
-              const { db, collection, addDoc, serverTimestamp } = window.fbHelper;
-              try {
-                await addDoc(collection(db, "scores"), {
-                  name: name.substring(0, 8), // 限制长度
-                  score: finalScore,
-                  createdAt: serverTimestamp()
-                });
-              } catch (e) { console.error("Firebase 提交失败:", e); }
-            }
-            initGame();
-          }, 100);
-        } else {
-          initGame();
+      // 控制与交互
+      window.addEventListener('keydown', e => {
+        const d = {ArrowUp:{r:-1,c:0}, ArrowDown:{r:1,c:0}, ArrowLeft:{r:0,c:-1}, ArrowRight:{r:0,c:1}}[e.key];
+        if (d) {
+          if (gameState !== GameState.PLAYING) initGame();
+          direction = {row:d.r, col:d.c};
         }
-      }
+      });
 
-      // --- 3. Firebase 核心逻辑：实时榜单同步 ---
-      function setupRealtimeLeaderboard() {
-        if (!window.fbHelper) {
-          setTimeout(setupRealtimeLeaderboard, 500);
-          return;
-        }
-        const { db, collection, query, orderBy, limit, onSnapshot } = window.fbHelper;
-        const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
-
-        onSnapshot(q, (snapshot) => {
-          const rankList = document.getElementById('rankList');
-          let html = '';
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            html += `
-              <div class="rank-item">
-                <span class="rank-name">${data.name || '匿名'}</span>
-                <span class="rank-score">${data.score}</span>
-              </div>`;
-          });
-          rankList.innerHTML = html || '暂无数据';
+      document.querySelectorAll('.dpad-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (gameState !== GameState.PLAYING) initGame();
+          const d = btn.dataset.dir;
+          if(d==='up') direction={row:-1,col:0};
+          if(d==='down') direction={row:1,col:0};
+          if(d==='left') direction={row:0,col:-1};
+          if(d==='right') direction={row:0,col:1};
         });
-      }
+      });
 
-      // 控制与启动
-      window.handleInput = (dir) => {
-        if (gameState !== 'PLAYING') initGame();
-        if (dir === 'up' && direction.row === 0) direction = {row:-1, col:0};
-        if (dir === 'down' && direction.row === 0) direction = {row:1, col:0};
-        if (dir === 'left' && direction.col === 0) direction = {row:0, col:-1};
-        if (dir === 'right' && direction.col === 0) direction = {row:0, col:1};
-      };
+      canvas.addEventListener('click', () => { if(gameState!==GameState.PLAYING) initGame(); });
 
-      setupRealtimeLeaderboard();
-      requestAnimationFrame(gameLoop);
+      setupLeaderboard();
+      requestAnimationFrame(loop);
     })();
   </script>
 </body>
