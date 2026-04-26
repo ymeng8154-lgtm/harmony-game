@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鸿蒙游戏空间</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-2048: #edc22e;
+            --accent-snake: #4ade80;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 2rem;
+            max-width: 1000px;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            width: 300px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+
+        /* 个性化样式 */
+        .card-2048:hover { border-color: var(--accent-2048); }
+        .card-snake:hover { border-color: var(--accent-snake); }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border-radius: 99px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .btn-2048 { background: var(--accent-2048); color: #000; }
+        .btn-snake { background: var(--accent-snake); color: #000; }
+
+        footer {
+            margin-top: auto;
+            padding: 2rem;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>鸿蒙游戏空间</h1>
+        <p>选择你的挑战，开启纯粹的游戏时光</p>
+    </header>
+
+    <div class="container">
+        <a href="2048.html" class="game-card card-2048">
+            <div class="icon">🔢</div>
+            <div class="title">2048</div>
+            <p class="desc">滑动方块，合并数字。<br>你能达到那个终极的 2048 吗？</p>
+            <div class="btn btn-2048">立即试玩</div>
+        </a>
+
+        <a href="snake.html" class="game-card card-snake">
+            <div class="icon">🐍</div>
+            <div class="title">贪吃蛇</div>
+            <p class="desc">经典像素竞技。在无尽的增长中，<br>挑战你的反应极限。</p>
+            <div class="btn btn-snake">进入狩猎</div>
+        </a>
+    </div>
+
+    <footer>
+        &copy; 2026 Nexus Play Studio. All Rights Reserved.
+    </footer>
+
+</body>
+</html>
