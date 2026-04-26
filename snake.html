@@ -46,6 +46,7 @@
       align-items: flex-start;
       max-width: 900px;
       width: 100%;
+      position: relative;
     }
 
     .game-wrapper {
@@ -55,6 +56,49 @@
       gap: 10px;
       width: 100%;
       max-width: 600px;
+    }
+
+    /* 排行榜切换按钮 */
+    .leaderboard-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      background: var(--panel-bg);
+      border: 2px solid var(--btn-border);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .leaderboard-toggle:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(1.1);
+    }
+
+    .leaderboard-toggle:active {
+      transform: scale(0.95);
+    }
+
+    .leaderboard-toggle.has-new-scores {
+      animation: pulse-notification 2s ease-in-out infinite;
+      border-color: var(--gold);
+    }
+
+    @keyframes pulse-notification {
+      0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+      50% { box-shadow: 0 4px 25px rgba(255, 215, 0, 0.5); }
     }
 
     /* 排行榜侧边栏 */
@@ -68,22 +112,59 @@
       min-width: 250px;
       max-width: 280px;
       color: #fff;
-      display: none; /* 默认隐藏 */
+      display: none;
+      transition: all 0.3s ease;
     }
 
     .leaderboard.visible {
       display: block;
+      animation: slideInRight 0.3s ease;
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .leaderboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
     }
 
     .leaderboard h3 {
       color: var(--gold);
       text-align: center;
-      margin-bottom: 15px;
       font-size: 1.2rem;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      margin: 0;
+    }
+
+    .leaderboard-close {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 5px;
+      transition: all 0.2s;
+      display: none; /* 桌面端隐藏关闭按钮 */
+    }
+
+    .leaderboard-close:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.1);
     }
 
     .leaderboard-list {
@@ -110,6 +191,15 @@
     .leaderboard-item.current-player {
       background: rgba(78, 203, 113, 0.2);
       border: 1px solid rgba(78, 203, 113, 0.3);
+    }
+
+    .leaderboard-item.new-score {
+      animation: highlightNew 1s ease;
+    }
+
+    @keyframes highlightNew {
+      0% { background: rgba(255, 215, 0, 0.3); }
+      100% { background: rgba(255, 255, 255, 0.05); }
     }
 
     .rank {
@@ -217,10 +307,25 @@
       }
       
       .leaderboard {
-        max-width: 600px;
-        width: 100%;
-        order: 2;
-        margin-top: 20px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 90vw;
+        width: 350px;
+        z-index: 99;
+        max-height: 80vh;
+        overflow-y: auto;
+        order: unset;
+        margin-top: 0;
+      }
+      
+      .leaderboard.visible {
+        display: block;
+      }
+      
+      .leaderboard-close {
+        display: block;
       }
       
       .game-wrapper {
@@ -240,6 +345,10 @@
       
       .leaderboard-list {
         max-height: 500px;
+      }
+      
+      .leaderboard-toggle {
+        display: none; /* 桌面端隐藏切换按钮 */
       }
     }
 
@@ -422,6 +531,24 @@
     .leaderboard-list::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.3);
     }
+
+    /* 移动端排行榜遮罩 */
+    .leaderboard-mask {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 98;
+    }
+
+    @media (max-width: 850px) {
+      .leaderboard-mask.visible {
+        display: block;
+      }
+    }
   </style>
 </head>
 <body>
@@ -434,10 +561,21 @@
     </div>
   </div>
 
+  <!-- 排行榜切换按钮 -->
+  <button class="leaderboard-toggle" id="leaderboardToggle" title="显示排行榜">
+    🏆
+  </button>
+
+  <!-- 移动端排行榜遮罩 -->
+  <div class="leaderboard-mask" id="leaderboardMask"></div>
+
   <div class="main-container">
     <!-- 排行榜 -->
     <div class="leaderboard" id="leaderboard">
-      <h3>🏆 实时排行榜</h3>
+      <div class="leaderboard-header">
+        <h3>🏆 实时排行榜</h3>
+        <button class="leaderboard-close" id="leaderboardClose">✕</button>
+      </div>
       <div id="leaderboardContent" class="loading-leaderboard">
         加载中...
       </div>
@@ -510,6 +648,13 @@
     const startGameBtn = document.getElementById('startGameBtn');
     const leaderboardContent = document.getElementById('leaderboardContent');
     const leaderboard = document.getElementById('leaderboard');
+    const leaderboardToggle = document.getElementById('leaderboardToggle');
+    const leaderboardClose = document.getElementById('leaderboardClose');
+    const leaderboardMask = document.getElementById('leaderboardMask');
+
+    // 排行榜显示状态
+    let leaderboardVisible = false;
+    let previousScoresCount = 0;
 
     // ==================== Firebase 排行榜功能 ====================
     function generatePlayerUID() {
@@ -551,6 +696,15 @@
         // 只取前10名
         const top10 = scores.slice(0, 10);
         
+        // 检测是否有新分数
+        if (scores.length > previousScoresCount && previousScoresCount > 0) {
+          leaderboardToggle.classList.add('has-new-scores');
+          setTimeout(() => {
+            leaderboardToggle.classList.remove('has-new-scores');
+          }, 5000);
+        }
+        previousScoresCount = scores.length;
+        
         updateLeaderboardUI(top10);
       }, (error) => {
         console.error('排行榜读取失败:', error);
@@ -588,6 +742,35 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // ==================== 排行榜显示控制 ====================
+    function toggleLeaderboard() {
+      if (leaderboardVisible) {
+        hideLeaderboard();
+      } else {
+        showLeaderboard();
+      }
+    }
+
+    function showLeaderboard() {
+      leaderboardVisible = true;
+      leaderboard.classList.add('visible');
+      leaderboardToggle.innerHTML = '✕';
+      leaderboardToggle.title = '隐藏排行榜';
+      
+      // 移动端显示遮罩
+      if (window.innerWidth <= 850) {
+        leaderboardMask.classList.add('visible');
+      }
+    }
+
+    function hideLeaderboard() {
+      leaderboardVisible = false;
+      leaderboard.classList.remove('visible');
+      leaderboardToggle.innerHTML = '🏆';
+      leaderboardToggle.title = '显示排行榜';
+      leaderboardMask.classList.remove('visible');
     }
 
     // ==================== 游戏常量 ====================
@@ -1098,8 +1281,10 @@
       hintText.textContent = '🎮 游戏进行中 · 方向键/按钮操控';
       hintText.classList.remove('flash');
       
-      // 显示排行榜
-      leaderboard.classList.add('visible');
+      // 桌面端自动显示排行榜
+      if (window.innerWidth > 850) {
+        showLeaderboard();
+      }
       
       playStartSound();
     }
@@ -1124,12 +1309,10 @@
       if (usernameModal.classList.contains('active')) return;
       
       if (!currentPlayer.name) {
-        // 没有昵称，显示昵称输入弹窗
         showUsernameModal();
         return;
       }
       
-      // 已有昵称，直接开始游戏
       if (gameState === GameState.IDLE) {
         startGame();
       } else if (gameState === GameState.GAME_OVER) {
@@ -1161,6 +1344,23 @@
     });
 
     // ==================== 事件监听 ====================
+    // 排行榜切换按钮
+    leaderboardToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLeaderboard();
+    });
+
+    // 排行榜关闭按钮（移动端）
+    leaderboardClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideLeaderboard();
+    });
+
+    // 点击遮罩关闭排行榜
+    leaderboardMask.addEventListener('click', () => {
+      hideLeaderboard();
+    });
+
     document.addEventListener('keydown', (e) => {
       if (usernameModal.classList.contains('active')) return;
       
@@ -1169,6 +1369,13 @@
       if (key === ' ') {
         e.preventDefault();
         handleGameStart();
+        return;
+      }
+
+      // 按L键切换排行榜
+      if (key === 'l' && e.ctrlKey) {
+        e.preventDefault();
+        toggleLeaderboard();
         return;
       }
 
@@ -1190,7 +1397,6 @@
       }
     });
 
-    // 点击画布触发游戏开始
     canvas.addEventListener('click', (e) => {
       if (usernameModal.classList.contains('active')) return;
       
@@ -1233,6 +1439,14 @@
         container.style.width = maxSize + 'px';
         container.style.height = maxSize + 'px';
       }
+      
+      // 响应式处理排行榜
+      if (window.innerWidth > 850) {
+        leaderboardToggle.style.display = 'none';
+        leaderboardMask.classList.remove('visible');
+      } else {
+        leaderboardToggle.style.display = 'flex';
+      }
     }
     window.addEventListener('resize', handleResize);
     handleResize();
@@ -1245,13 +1459,12 @@
       updateScoreDisplay(); updatePowerupUI();
       hintText.classList.add('flash');
       canvasContainer.classList.remove('game-over-glow');
-      // 排行榜初始隐藏
+      leaderboardVisible = false;
       leaderboard.classList.remove('visible');
       
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       animationFrameId = requestAnimationFrame(gameLoop);
       
-      // 启动排行榜监听（在后台运行）
       listenLeaderboard();
     }
     init();
