@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>俄罗斯方块 · 紧凑布局</title>
+  <title>俄罗斯方块 · 侧边信息栏</title>
   <style>
     * {
       margin: 0;
@@ -36,7 +36,13 @@
       max-width: 100%;
     }
 
-    /* 游戏主区域：相对定位，用于叠加信息 */
+    /* 游戏主区域与侧边栏横向排列 */
+    .game-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
     .play-area {
       position: relative;
       display: flex;
@@ -49,72 +55,62 @@
       border-radius: 24px;
       box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 255, 255, 0.2);
       display: block;
-      width: 240px;   /* 缩小游戏画布，约占屏幕一半 */
-      height: 480px;
+      width: 220px;   /* 游戏画布进一步缩小 */
+      height: 440px;
       max-width: 100%;
     }
 
-    /* 叠加在画布左上角的信息面板 */
-    .overlay-info {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 10;
-      pointer-events: none; /* 让点击穿透到画布 */
-    }
-
-    .next-mini {
-      background: rgba(10, 10, 25, 0.8);
-      backdrop-filter: blur(8px);
-      border-radius: 14px;
-      padding: 6px;
+    /* 右侧信息面板：下一个 + 得分 */
+    .side-info {
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      width: fit-content;
+      gap: 8px;
+      background: rgba(15, 15, 35, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 8px 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .next-mini {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
     }
 
     .next-label {
       color: #b8b8d0;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      letter-spacing: 1px;
-      margin-bottom: 2px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
     }
 
     canvas#nextCanvas {
       background: #0a0a1a;
       border-radius: 10px;
-      width: 64px;
-      height: 64px;
-      display: block;
+      width: 52px;
+      height: 52px;
     }
 
     .score-mini {
-      background: rgba(20, 20, 40, 0.85);
-      backdrop-filter: blur(8px);
-      border-radius: 14px;
-      padding: 6px 12px;
       text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      margin-top: 2px;
     }
 
     .score-label {
       color: #aaa;
-      font-size: 10px;
+      font-size: 9px;
       letter-spacing: 0.5px;
     }
 
     .score-value {
       color: #ffd966;
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 800;
-      text-shadow: 0 0 8px #ffb300;
+      text-shadow: 0 0 6px #ffb300;
       line-height: 1.1;
     }
 
@@ -126,12 +122,13 @@
       background: rgba(180, 0, 0, 0.8);
       color: white;
       font-weight: bold;
-      font-size: 16px;
-      padding: 8px 18px;
-      border-radius: 30px;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 20px;
       display: none;
       z-index: 10;
       backdrop-filter: blur(4px);
+      white-space: nowrap;
     }
 
     /* 控制按钮区域 */
@@ -139,7 +136,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       margin-top: 4px;
     }
 
@@ -147,12 +144,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .dir-row {
       display: flex;
-      gap: 16px;
+      gap: 14px;
       justify-content: center;
     }
 
@@ -161,12 +158,12 @@
       backdrop-filter: blur(10px);
       border: none;
       border-radius: 50%;
-      width: 50px;
-      height: 50px;
+      width: 46px;
+      height: 46px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 22px;
       color: #e0e0ff;
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3);
       cursor: pointer;
@@ -186,7 +183,7 @@
 
     .action-buttons {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
       flex-wrap: wrap;
       justify-content: center;
@@ -197,9 +194,9 @@
       backdrop-filter: blur(12px);
       border: none;
       border-radius: 30px;
-      padding: 10px 16px;
+      padding: 8px 14px;
       font-weight: bold;
-      font-size: 14px;
+      font-size: 13px;
       color: #f0f0ff;
       box-shadow: 0 6px 12px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.3);
       cursor: pointer;
@@ -210,7 +207,7 @@
       border: 1px solid rgba(255,255,255,0.2);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
 
     .wide-btn:active {
@@ -221,41 +218,46 @@
 
     .status-text {
       color: #ccc;
-      font-size: 11px;
+      font-size: 10px;
       margin-top: 2px;
     }
 
-    @media (max-width: 400px) {
+    @media (max-width: 380px) {
       canvas#boardCanvas {
-        width: 220px;
-        height: 440px;
+        width: 190px;
+        height: 380px;
       }
       .ctrl-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 22px;
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+      .wide-btn {
+        padding: 6px 10px;
+        font-size: 11px;
       }
     }
   </style>
 </head>
 <body>
   <div class="game-wrapper">
-    <div class="play-area">
-      <canvas id="boardCanvas" width="240" height="480"></canvas>
+    <!-- 游戏画布 + 右侧信息栏 -->
+    <div class="game-main-row">
+      <div class="play-area">
+        <canvas id="boardCanvas" width="220" height="440"></canvas>
+        <div id="gameOverIndicator" class="game-over-indicator">游戏结束</div>
+      </div>
       
-      <!-- 左上角叠加信息 -->
-      <div class="overlay-info">
+      <div class="side-info">
         <div class="next-mini">
           <div class="next-label">下一个</div>
-          <canvas id="nextCanvas" width="64" height="64"></canvas>
+          <canvas id="nextCanvas" width="52" height="52"></canvas>
         </div>
         <div class="score-mini">
           <div class="score-label">得分</div>
           <div class="score-value" id="scoreDisplay">0</div>
         </div>
       </div>
-      
-      <div id="gameOverIndicator" class="game-over-indicator">游戏结束</div>
     </div>
 
     <!-- 手机触控按钮区域 -->
@@ -283,7 +285,7 @@
     (function() {
       const COLS = 10;
       const ROWS = 20;
-      const CELL_SIZE = 24; // 画布240/10 = 24px
+      const CELL_SIZE = 22; // 220/10 = 22px
       const BOARD_WIDTH = COLS * CELL_SIZE;
       const BOARD_HEIGHT = ROWS * CELL_SIZE;
 
@@ -523,7 +525,7 @@
             ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
             if (colorIndex !== 0) {
               ctx.fillStyle = 'rgba(255,255,255,0.2)';
-              ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE - 1, 4);
+              ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE - 1, 3);
             }
           }
         }
@@ -537,7 +539,7 @@
                 ctx.fillStyle = COLORS[colorIndex];
                 ctx.fillRect(px, py, CELL_SIZE - 1, CELL_SIZE - 1);
                 ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.fillRect(px, py, CELL_SIZE - 1, 4);
+                ctx.fillRect(px, py, CELL_SIZE - 1, 3);
               }
             }
           }
@@ -546,7 +548,7 @@
           ctx.fillStyle = 'rgba(0,0,0,0.55)';
           ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
           ctx.fillStyle = 'white';
-          ctx.font = 'bold 18px "Segoe UI"';
+          ctx.font = 'bold 16px "Segoe UI"';
           ctx.textAlign = 'center';
           ctx.fillText('暂停中', BOARD_WIDTH/2, BOARD_HEIGHT/2);
         } else if (gameOver) {
@@ -556,15 +558,15 @@
       }
 
       function drawNext() {
-        nextCtx.clearRect(0, 0, 64, 64);
+        nextCtx.clearRect(0, 0, 52, 52);
         if (nextPiece) {
           const shape = nextPiece.shape;
           const colorIndex = nextPiece.colorIndex;
-          const block = 14;
+          const block = 11;
           const cols = shape[0].length;
           const rows = shape.length;
-          const offX = (64 - cols * block) / 2;
-          const offY = (64 - rows * block) / 2;
+          const offX = (52 - cols * block) / 2;
+          const offY = (52 - rows * block) / 2;
           for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
               if (shape[r][c]) {
@@ -576,7 +578,6 @@
         }
       }
 
-      // 键盘事件
       function handleKeyDown(e) {
         const key = e.key;
         if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' ','Space'].includes(key)) {
@@ -600,7 +601,6 @@
         }
       }
 
-      // 绑定按钮事件
       document.getElementById('btnLeft').addEventListener('click', () => movePiece(-1, 0));
       document.getElementById('btnRight').addEventListener('click', () => movePiece(1, 0));
       document.getElementById('btnDown').addEventListener('click', () => movePiece(0, 1));
