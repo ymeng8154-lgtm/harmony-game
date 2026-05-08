@@ -11,6 +11,8 @@
             --text-color: #f8fafc;
             --accent-2048: #edc22e;
             --accent-snake: #4ade80;
+            --accent-tetris: #f472b6;
+            /* 俄罗斯方块强调色：粉红 */
         }
 
         body {
@@ -43,7 +45,7 @@
             flex-wrap: wrap;
             justify-content: center;
             padding: 2rem;
-            max-width: 1000px;
+            max-width: 1100px;
         }
 
         .game-card {
@@ -55,7 +57,7 @@
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
             text-decoration: none;
             color: inherit;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -84,19 +86,43 @@
             margin-bottom: 2rem;
         }
 
-        /* 个性化样式 */
-        .card-2048:hover { border-color: var(--accent-2048); }
-        .card-snake:hover { border-color: var(--accent-snake); }
+        /* 个性化悬停边框 */
+        .card-2048:hover {
+            border-color: var(--accent-2048);
+        }
+
+        .card-snake:hover {
+            border-color: var(--accent-snake);
+        }
+
+        .card-tetris:hover {
+            border-color: var(--accent-tetris);
+        }
 
         .btn {
             padding: 0.8rem 2rem;
             border-radius: 99px;
             font-weight: 600;
             transition: opacity 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
-        .btn-2048 { background: var(--accent-2048); color: #000; }
-        .btn-snake { background: var(--accent-snake); color: #000; }
+        .btn-2048 {
+            background: var(--accent-2048);
+            color: #000;
+        }
+
+        .btn-snake {
+            background: var(--accent-snake);
+            color: #000;
+        }
+
+        .btn-tetris {
+            background: var(--accent-tetris);
+            color: #000;
+        }
 
         footer {
             margin-top: auto;
@@ -114,6 +140,7 @@
     </header>
 
     <div class="container">
+        <!-- 2048 卡片 -->
         <a href="2048.html" class="game-card card-2048">
             <div class="icon">🔢</div>
             <div class="title">2048</div>
@@ -121,11 +148,20 @@
             <div class="btn btn-2048">立即试玩</div>
         </a>
 
+        <!-- 贪吃蛇 卡片 -->
         <a href="snake.html" class="game-card card-snake">
             <div class="icon">🐍</div>
             <div class="title">贪吃蛇</div>
             <p class="desc">经典像素竞技。在无尽的增长中，<br>挑战你的反应极限。</p>
             <div class="btn btn-snake">进入狩猎</div>
+        </a>
+
+        <!-- 新添加的俄罗斯方块卡片 -->
+        <a href="square.html" class="game-card card-tetris">
+            <div class="icon">🧱</div>
+            <div class="title">俄罗斯方块</div>
+            <p class="desc">堆叠消除，经典永恒。<br>在几何坠落中考验你的布局智慧。</p>
+            <div class="btn btn-tetris">开始堆叠</div>
         </a>
     </div>
 
