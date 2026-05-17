@@ -2,9 +2,16 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>连连看小游戏 - 带连接路径</title>
     <style>
+        :root {
+            --cell-size: 60px;
+            --cell-font-size: 28px;
+            --gap: 4px;
+            --board-padding: 10px;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,28 +23,35 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            min-height: 100dvh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: 'Arial', sans-serif;
+            font-family: 'Arial', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding: 10px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .game-container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
-            padding: 30px;
+            padding: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             text-align: center;
             position: relative;
             z-index: 1;
+            width: 100%;
+            max-width: 580px;
         }
 
         .game-header {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .game-title {
-            font-size: 32px;
+            font-size: clamp(22px, 5vw, 32px);
             color: #667eea;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             font-weight: bold;
         }
 
@@ -45,8 +59,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 10px 20px;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding: 10px 14px;
             background: #f0f0f0;
             border-radius: 10px;
         }
@@ -54,9 +70,10 @@
         .score,
         .timer,
         .remaining-display {
-            font-size: 18px;
+            font-size: clamp(13px, 3.2vw, 18px);
             color: #333;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         .score span,
@@ -69,19 +86,21 @@
         .board-wrapper {
             position: relative;
             display: inline-block;
-            margin: 20px auto;
+            margin: 10px auto;
+            line-height: 0;
         }
 
         .game-board {
             display: grid;
-            grid-template-columns: repeat(8, 60px);
-            grid-template-rows: repeat(8, 60px);
-            gap: 4px;
-            padding: 10px;
+            grid-template-columns: repeat(8, var(--cell-size));
+            grid-template-rows: repeat(8, var(--cell-size));
+            gap: var(--gap);
+            padding: var(--board-padding);
             background: #e0e0e0;
             border-radius: 10px;
             position: relative;
             z-index: 1;
+            line-height: normal;
         }
 
         /* 连接线画布层 */
@@ -89,30 +108,30 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
             pointer-events: none;
             z-index: 10;
         }
 
         .cell {
-            width: 60px;
-            height: 60px;
+            width: var(--cell-size);
+            height: var(--cell-size);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: var(--cell-font-size);
             cursor: pointer;
             border-radius: 8px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             background: #fff;
             border: 2px solid #ddd;
             user-select: none;
+            -webkit-user-select: none;
+            line-height: 1;
         }
 
-        .cell:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        .cell:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease;
         }
 
         .cell.selected {
@@ -130,6 +149,7 @@
             background: #f9f9f9;
             border: 2px dashed #ddd;
             cursor: default;
+            pointer-events: none;
         }
 
         .cell.empty:hover {
@@ -154,15 +174,22 @@
         }
 
         .button {
-            padding: 10px 30px;
-            font-size: 16px;
+            padding: 10px 20px;
+            font-size: clamp(13px, 3vw, 16px);
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            margin: 5px;
+            margin: 4px;
             font-weight: bold;
             transition: all 0.3s ease;
             color: white;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .button:active {
+            transform: scale(0.94);
+            transition: transform 0.1s ease;
         }
 
         .btn-start {
@@ -193,14 +220,15 @@
         }
 
         .game-message {
-            margin-top: 20px;
-            font-size: 20px;
+            margin-top: 14px;
+            font-size: clamp(14px, 3.5vw, 20px);
             color: #667eea;
             font-weight: bold;
-            min-height: 30px;
+            min-height: 26px;
+            transition: all 0.3s ease;
         }
 
-        /* 胜利弹窗样式保持不变 */
+        /* 胜利弹窗样式 */
         .game-over-overlay {
             position: fixed;
             top: 0;
@@ -213,44 +241,47 @@
             align-items: center;
             z-index: 1000;
             animation: fadeIn 0.3s ease;
+            padding: 20px;
         }
 
         .game-over-dialog {
             background: white;
             border-radius: 20px;
-            padding: 40px;
+            padding: clamp(24px, 5vw, 40px);
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             animation: slideIn 0.5s ease;
             max-width: 400px;
-            width: 90%;
+            width: 100%;
         }
 
         .game-over-dialog .success-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
+            font-size: clamp(40px, 10vw, 60px);
+            margin-bottom: 16px;
         }
 
         .game-over-dialog h2 {
-            font-size: 28px;
+            font-size: clamp(20px, 5vw, 28px);
             color: #667eea;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .game-over-dialog .stats {
             background: #f8f9ff;
             border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
+            padding: clamp(14px, 3vw, 20px);
+            margin: 16px 0;
         }
 
         .game-over-dialog .stat-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 10px 0;
-            font-size: 18px;
+            margin: 8px 0;
+            font-size: clamp(14px, 3.5vw, 18px);
             color: #333;
+            flex-wrap: wrap;
+            gap: 4px;
         }
 
         .game-over-dialog .stat-label {
@@ -260,12 +291,12 @@
         .game-over-dialog .stat-value {
             font-weight: bold;
             color: #667eea;
-            font-size: 20px;
+            font-size: clamp(16px, 4vw, 20px);
         }
 
         .game-over-dialog button {
-            padding: 12px 40px;
-            font-size: 18px;
+            padding: 12px 36px;
+            font-size: clamp(15px, 3.5vw, 18px);
             border: none;
             border-radius: 25px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -273,7 +304,12 @@
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s ease;
-            margin-top: 10px;
+            margin-top: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-over-dialog button:active {
+            transform: scale(0.94);
         }
 
         .game-over-dialog button:hover {
@@ -292,12 +328,121 @@
 
         @keyframes slideIn {
             from {
-                transform: translateY(-50px);
+                transform: translateY(-40px);
                 opacity: 0;
             }
             to {
                 transform: translateY(0);
                 opacity: 1;
+            }
+        }
+
+        /* 移动端额外适配 */
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 14px 10px;
+                border-radius: 14px;
+            }
+
+            .game-info {
+                padding: 8px 10px;
+                gap: 6px;
+                border-radius: 8px;
+            }
+
+            .button {
+                padding: 8px 16px;
+                margin: 3px;
+                border-radius: 20px;
+            }
+
+            .board-wrapper {
+                margin: 6px auto;
+            }
+
+            .game-board {
+                border-radius: 8px;
+            }
+
+            .cell {
+                border-radius: 6px;
+                border-width: 1.5px;
+            }
+
+            .cell.selected {
+                border-width: 2.5px;
+            }
+
+            .game-message {
+                margin-top: 10px;
+                min-height: 22px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .game-container {
+                padding: 10px 6px;
+                border-radius: 10px;
+            }
+
+            .game-info {
+                padding: 6px 8px;
+                gap: 4px;
+                border-radius: 6px;
+            }
+
+            .button {
+                padding: 7px 12px;
+                margin: 2px;
+                font-size: 12px;
+                border-radius: 16px;
+            }
+
+            .board-wrapper {
+                margin: 4px auto;
+            }
+        }
+
+        /* 横屏手机适配 */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body {
+                padding: 4px;
+            }
+
+            .game-container {
+                padding: 8px 14px;
+                border-radius: 12px;
+            }
+
+            .game-header {
+                margin-bottom: 4px;
+            }
+
+            .game-title {
+                font-size: 18px;
+                margin-bottom: 2px;
+            }
+
+            .game-info {
+                margin-bottom: 6px;
+                padding: 6px 10px;
+                gap: 4px;
+            }
+
+            .board-wrapper {
+                margin: 4px auto;
+            }
+
+            .game-message {
+                margin-top: 6px;
+                min-height: 18px;
+                font-size: 13px;
+            }
+
+            .button {
+                padding: 6px 14px;
+                margin: 2px;
+                font-size: 12px;
             }
         }
     </style>
@@ -347,50 +492,136 @@
                 // 画布相关
                 this.canvas = document.getElementById('pathCanvas');
                 this.ctx = this.canvas.getContext('2d');
-                // 用于存储当前绘制的路径定时器（用于清除）
                 this.pathTimer = null;
+                this.canvasCssWidth = 0;
+                this.canvasCssHeight = 0;
+                this.dpr = 1;
+
+                // 动态尺寸（在 calculateCellSize 中计算）
+                this.cellSize = 60;
+                this.gap = 4;
+                this.boardPadding = 10;
+                this.cellFontSize = 28;
+
+                // resize 防抖
+                this.resizeDebounceTimer = null;
+                this._boundResizeHandler = this._handleResize.bind(this);
 
                 this.init();
             }
 
             init() {
+                this.calculateCellSize();
                 this.createBoard();
                 this.renderBoard();
                 this.setupEventListeners();
                 this.resizeCanvas();
+                // 监听窗口大小变化
+                window.addEventListener('resize', this._boundResizeHandler);
+                window.addEventListener('orientationchange', () => {
+                    // orientationchange 后延迟执行，等待布局更新
+                    clearTimeout(this.resizeDebounceTimer);
+                    this.resizeDebounceTimer = setTimeout(() => this._handleResize(), 300);
+                });
             }
 
-            // 调整 canvas 尺寸以匹配棋盘实际大小
+            // 清理资源（在重新开始游戏时调用）
+            destroy() {
+                window.removeEventListener('resize', this._boundResizeHandler);
+                window.removeEventListener('orientationchange', () => {});
+                clearTimeout(this.resizeDebounceTimer);
+                this.stopTimer();
+                this.clearPath();
+            }
+
+            _handleResize() {
+                clearTimeout(this.resizeDebounceTimer);
+                this.resizeDebounceTimer = setTimeout(() => {
+                    if (this.gameFinished) return;
+                    const oldSelected = this.selectedCell ? {
+                        row: this.selectedCell.row,
+                        col: this.selectedCell.col
+                    } : null;
+                    this.deselectCell();
+                    this.clearPath();
+                    this.calculateCellSize();
+                    this.renderBoard();
+                    this.resizeCanvas();
+                    // 尝试恢复选中状态
+                    if (oldSelected && this.board[oldSelected.row][oldSelected.col] !== null) {
+                        const cells = document.querySelectorAll('.cell');
+                        const cellEl = cells[oldSelected.row * this.cols + oldSelected.col];
+                        if (cellEl && !cellEl.classList.contains('empty')) {
+                            this.selectCell(oldSelected.row, oldSelected.col, cellEl);
+                        }
+                    }
+                }, 250);
+            }
+
+            // 动态计算格子大小
+            calculateCellSize() {
+                const maxCellSize = 60;
+                const minCellSize = 26;
+
+                // 可用宽度（考虑 container padding 和 wrapper 边距）
+                const containerPadding = window.innerWidth <= 360 ? 24 :
+                    window.innerWidth <= 480 ? 34 : 50;
+                const availableWidth = window.innerWidth - containerPadding;
+
+                // 可用高度（减去非棋盘内容）
+                const nonBoardHeight = window.innerHeight <= 500 ? 160 : 240;
+                const availableHeight = window.innerHeight - nonBoardHeight;
+
+                // 基于宽度计算（预留 padding 和 gap 的空间）
+                const cellSizeFromWidth = Math.floor((availableWidth - 20) / this.cols);
+                const cellSizeFromHeight = Math.floor((availableHeight - 20) / this.rows);
+
+                let cellSize = Math.min(cellSizeFromWidth, cellSizeFromHeight, maxCellSize);
+                cellSize = Math.max(cellSize, minCellSize);
+
+                this.cellSize = cellSize;
+                this.gap = Math.max(2, Math.min(4, Math.round(cellSize * 0.07)));
+                this.boardPadding = Math.max(5, Math.min(10, Math.round(cellSize * 0.18)));
+                this.cellFontSize = Math.max(14, Math.round(cellSize * 0.48));
+            }
+
+            // 调整 canvas 尺寸以匹配棋盘实际大小，处理设备像素比
             resizeCanvas() {
                 const gameBoard = document.getElementById('gameBoard');
-                const rect = gameBoard.getBoundingClientRect();
-                // canvas 需要覆盖整个 board-wrapper，其大小与 gameBoard 一致
-                const wrapper = document.getElementById('boardWrapper');
-                // 设置 canvas 宽高等于 wrapper 的 clientWidth/Height
-                this.canvas.width = wrapper.clientWidth;
-                this.canvas.height = wrapper.clientHeight;
+                const cssWidth = gameBoard.offsetWidth;
+                const cssHeight = gameBoard.offsetHeight;
+
+                if (cssWidth === 0 || cssHeight === 0) {
+                    // DOM 尚未就绪，稍后重试
+                    requestAnimationFrame(() => this.resizeCanvas());
+                    return;
+                }
+
+                this.canvasCssWidth = cssWidth;
+                this.canvasCssHeight = cssHeight;
+                this.dpr = window.devicePixelRatio || 1;
+
+                // 设置 canvas 物理像素尺寸
+                this.canvas.width = cssWidth * this.dpr;
+                this.canvas.height = cssHeight * this.dpr;
+
+                // 设置 canvas CSS 显示尺寸
+                this.canvas.style.width = cssWidth + 'px';
+                this.canvas.style.height = cssHeight + 'px';
+
+                // 缩放坐标系统，使绘制使用 CSS 像素
+                this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
             }
 
-            // 获取某个格子中心的像素坐标（相对于 canvas）
+            // 获取某个格子中心的像素坐标（相对于 canvas，使用 CSS 像素）
             getCellCenter(row, col) {
-                // 棋盘内部 padding:10px，格子宽高 60px，gap 4px
-                const padding = 10;
-                const cellSize = 60;
-                const gap = 4;
-                // 格子左上角相对于 gameBoard 左上角的位置
-                const x = padding + col * (cellSize + gap) + cellSize / 2;
-                const y = padding + row * (cellSize + gap) + cellSize / 2;
-                // 由于 canvas 与 boardWrapper 大小一致，且 gameBoard 就是 wrapper 的内容，所以坐标直接使用
-                // 如果 canvas 与 gameBoard 位置完全重叠，则坐标一致
-                // 但 canvas 宽高设为 wrapper 的宽高，而 wrapper 可能比 gameBoard 大（如果 gameBoard 设置了 margin）
-                // 实际上 wrapper 只包含 gameBoard，没有其他元素，且 gameBoard 没有 margin，所以 wrapper 尺寸 == gameBoard 尺寸
-                // 因此坐标可以直接使用
+                const x = this.boardPadding + col * (this.cellSize + this.gap) + this.cellSize / 2;
+                const y = this.boardPadding + row * (this.cellSize + this.gap) + this.cellSize / 2;
                 return { x, y };
             }
 
             // 获取连接路径的像素坐标数组（拐点）
             getConnectionPath(row1, col1, row2, col2) {
-                // 返回一个点数组，每个点 {x, y} 是路径转折点
                 const points = [];
                 points.push(this.getCellCenter(row1, col1));
 
@@ -452,33 +683,34 @@
                     }
                 }
 
-                // 理论上不会到达这里，因为 canConnect 已经为 true 才会调用
                 return points;
             }
 
-            // 绘制路径
+            // 绘制路径（使用 CSS 像素坐标）
             drawPath(points) {
                 if (!points || points.length < 2) return;
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.clearRect(0, 0, this.canvasCssWidth, this.canvasCssHeight);
                 this.ctx.beginPath();
                 this.ctx.strokeStyle = '#ff5722';
-                this.ctx.lineWidth = 4;
+                this.ctx.lineWidth = Math.max(2.5, Math.min(5, this.cellSize * 0.07));
                 this.ctx.lineCap = 'round';
                 this.ctx.lineJoin = 'round';
                 this.ctx.shadowColor = 'rgba(255, 87, 34, 0.6)';
-                this.ctx.shadowBlur = 8;
+                this.ctx.shadowBlur = Math.max(4, Math.min(8, this.cellSize * 0.12));
 
                 this.ctx.moveTo(points[0].x, points[0].y);
                 for (let i = 1; i < points.length; i++) {
                     this.ctx.lineTo(points[i].x, points[i].y);
                 }
                 this.ctx.stroke();
-                this.ctx.shadowBlur = 0; // 重置阴影
+                // 重置阴影
+                this.ctx.shadowBlur = 0;
+                this.ctx.shadowColor = 'transparent';
             }
 
             // 清除画布
             clearPath() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.clearRect(0, 0, this.canvasCssWidth, this.canvasCssHeight);
                 if (this.pathTimer) {
                     clearTimeout(this.pathTimer);
                     this.pathTimer = null;
@@ -503,15 +735,26 @@
             }
 
             shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
+                const arr = [...array];
+                for (let i = arr.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
                 }
-                return array;
+                return arr;
             }
 
             renderBoard() {
                 const gameBoard = document.getElementById('gameBoard');
+                // 设置 CSS 变量
+                gameBoard.style.setProperty('--cell-size', `${this.cellSize}px`);
+                gameBoard.style.setProperty('--cell-font-size', `${this.cellFontSize}px`);
+                gameBoard.style.setProperty('--gap', `${this.gap}px`);
+                gameBoard.style.setProperty('--board-padding', `${this.boardPadding}px`);
+                gameBoard.style.gridTemplateColumns = `repeat(${this.cols}, ${this.cellSize}px)`;
+                gameBoard.style.gridTemplateRows = `repeat(${this.rows}, ${this.cellSize}px)`;
+                gameBoard.style.gap = `${this.gap}px`;
+                gameBoard.style.padding = `${this.boardPadding}px`;
+
                 gameBoard.innerHTML = '';
                 for (let i = 0; i < this.rows; i++) {
                     for (let j = 0; j < this.cols; j++) {
@@ -533,7 +776,9 @@
             }
 
             setupEventListeners() {
-                document.getElementById('gameBoard').addEventListener('click', (e) => {
+                const gameBoard = document.getElementById('gameBoard');
+                // 移除旧监听器（通过替换元素实现，无需额外处理）
+                gameBoard.addEventListener('click', (e) => {
                     if (this.gameFinished) return;
                     const cell = e.target.closest('.cell');
                     if (!cell || cell.classList.contains('empty') || cell.classList.contains('matched')) {
@@ -542,6 +787,12 @@
                     const row = parseInt(cell.dataset.row);
                     const col = parseInt(cell.dataset.col);
                     this.handleCellClick(row, col, cell);
+                });
+
+                // 触摸事件（移动端优化，防止双击缩放等问题）
+                gameBoard.addEventListener('touchend', (e) => {
+                    // click 事件在移动端也会触发，这里不做额外处理
+                    // 但可以用于未来扩展（如长按等）
                 });
             }
 
@@ -591,9 +842,24 @@
             }
 
             matchCells(row1, col1, row2, col2) {
-                const cells = document.querySelectorAll('.cell');
+                const cells = document.querySelectorAll('#gameBoard .cell');
                 const cell1 = cells[row1 * this.cols + col1];
                 const cell2 = cells[row2 * this.cols + col2];
+
+                if (!cell1 || !cell2) {
+                    // 元素已不存在（可能在动画期间被 resize 重建），直接更新数据
+                    this.board[row1][col1] = null;
+                    this.board[row2][col2] = null;
+                    this.renderBoard();
+                    this.score += 10;
+                    document.getElementById('score').textContent = this.score;
+                    document.getElementById('message').textContent = '匹配成功！+10分';
+                    const remaining = this.countRemaining();
+                    if (remaining === 0) {
+                        this.gameWin();
+                    }
+                    return;
+                }
 
                 cell1.classList.add('matched');
                 cell2.classList.add('matched');
@@ -613,7 +879,10 @@
             }
 
             canConnect(row1, col1, row2, col2) {
+                if (row1 < 0 || row1 >= this.rows || col1 < 0 || col1 >= this.cols ||
+                    row2 < 0 || row2 >= this.rows || col2 < 0 || col2 >= this.cols) return false;
                 if (this.board[row1][col1] !== this.board[row2][col2]) return false;
+                if (this.board[row1][col1] === null || this.board[row2][col2] === null) return false;
                 if (row1 === row2 && col1 === col2) return false;
                 return this.canConnectDirect(row1, col1, row2, col2) ||
                     this.canConnectOneCorner(row1, col1, row2, col2) ||
@@ -730,10 +999,10 @@
             gameWin() {
                 this.gameFinished = true;
                 this.stopTimer();
-            
+
                 // 计算最终得分：消除得分 - 用时秒数（不低于0）
                 const finalScore = Math.max(0, this.score - this.timer);
-            
+
                 let stars = '';
                 let starCount = 0;
                 if (this.timer <= 60) {
@@ -746,7 +1015,7 @@
                     starCount = 1;
                     stars = '⭐';
                 }
-            
+
                 const overlay = document.createElement('div');
                 overlay.className = 'game-over-overlay';
                 const dialog = document.createElement('div');
@@ -772,7 +1041,7 @@
                             <span class="stat-value">${stars}</span>
                         </div>
                     </div>
-                    <p style="color: #666; margin-bottom: 15px;">
+                    <p style="color: #666; margin-bottom: 15px; font-size: clamp(13px, 3vw, 16px);">
                         最终得分 = 消除得分 - 所用时间<br>
                         ${starCount === 3 ? '太棒了！你是连连看大师！' :
                           starCount === 2 ? '不错哦！继续加油！' :
@@ -788,6 +1057,13 @@
                         dialog.remove();
                     }
                 });
+                // 也支持触摸关闭
+                overlay.addEventListener('touchend', function(e) {
+                    if (e.target === overlay) {
+                        overlay.remove();
+                        dialog.remove();
+                    }
+                });
                 document.getElementById('message').textContent = '太棒了！全部消除完毕！';
             }
         }
@@ -796,11 +1072,14 @@
         let game;
 
         function startGame() {
-            document.querySelectorAll('.game-over-overlay, .game-over-dialog').forEach(el => el.remove());
+            // 清理旧游戏
             if (game) {
-                game.stopTimer();
-                game.clearPath();
+                game.destroy();
+                game = null;
             }
+            // 移除弹窗
+            document.querySelectorAll('.game-over-overlay, .game-over-dialog').forEach(el => el.remove());
+            // 创建新游戏
             game = new LianLianKan();
             game.startTimer();
             document.getElementById('score').textContent = '0';
@@ -811,22 +1090,26 @@
             if (!game || game.gameFinished) return;
             const hint = game.findHint();
             if (hint) {
-                const cells = document.querySelectorAll('.cell');
+                const cells = document.querySelectorAll('#gameBoard .cell');
                 const cell1 = cells[hint.row1 * game.cols + hint.col1];
                 const cell2 = cells[hint.row2 * game.cols + hint.col2];
-                cell1.style.background = '#ffd700';
-                cell2.style.background = '#ffd700';
+                if (cell1 && cell2) {
+                    cell1.style.background = '#ffd700';
+                    cell2.style.background = '#ffd700';
 
-                // 绘制提示连接路径
-                const path = game.getConnectionPath(hint.row1, hint.col1, hint.row2, hint.col2);
-                game.drawPath(path);
+                    // 绘制提示连接路径
+                    const path = game.getConnectionPath(hint.row1, hint.col1, hint.row2, hint.col2);
+                    game.drawPath(path);
 
-                setTimeout(() => {
-                    cell1.style.background = '';
-                    cell2.style.background = '';
-                    game.clearPath();
-                }, 1000);
-
+                    // 清除之前的定时器
+                    if (game.pathTimer) clearTimeout(game.pathTimer);
+                    game.pathTimer = setTimeout(() => {
+                        if (cell1) cell1.style.background = '';
+                        if (cell2) cell2.style.background = '';
+                        game.clearPath();
+                        game.pathTimer = null;
+                    }, 1200);
+                }
                 document.getElementById('message').textContent = '找到可匹配的对了！';
             } else {
                 document.getElementById('message').textContent = '没有可匹配的了，请重排！';
@@ -853,12 +1136,20 @@
                 }
             }
             game.deselectCell();
-            game.clearPath(); // 清除可能存在的提示路径
+            game.clearPath();
+            if (game.pathTimer) {
+                clearTimeout(game.pathTimer);
+                game.pathTimer = null;
+            }
             game.renderBoard();
             document.getElementById('message').textContent = '棋盘已重新排列！';
         }
 
-        window.addEventListener('load', startGame);
+        // 页面加载完成后启动游戏
+        window.addEventListener('DOMContentLoaded', () => {
+            // 确保初始布局稳定后再启动
+            setTimeout(startGame, 100);
+        });
     </script>
 </body>
 </html>
