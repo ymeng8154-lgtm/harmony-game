@@ -13,6 +13,8 @@
             --accent-snake: #4ade80;
             --accent-tetris: #f472b6;
             /* 俄罗斯方块强调色：粉红 */
+            --accent-match: #22d3ee;
+            /* 连连看强调色：霓虹青/电光蓝 */
         }
 
         body {
@@ -45,7 +47,7 @@
             flex-wrap: wrap;
             justify-content: center;
             padding: 2rem;
-            max-width: 1100px;
+            max-width: 1400px; /* 增加最大宽度以完美容纳4张卡片 */
         }
 
         .game-card {
@@ -99,6 +101,10 @@
             border-color: var(--accent-tetris);
         }
 
+        .card-match:hover {
+            border-color: var(--accent-match);
+        }
+
         .btn {
             padding: 0.8rem 2rem;
             border-radius: 99px;
@@ -107,6 +113,7 @@
             border: none;
             cursor: pointer;
             font-size: 1rem;
+            margin-top: auto; /* 确保所有卡片的按钮底部对齐 */
         }
 
         .btn-2048 {
@@ -124,6 +131,11 @@
             color: #000;
         }
 
+        .btn-match {
+            background: var(--accent-match);
+            color: #000;
+        }
+
         footer {
             margin-top: auto;
             padding: 2rem;
@@ -135,12 +147,11 @@
 <body>
 
     <header>
-        <h1>鸿蒙游戏空间</h1>
+        <h1>游戏空间</h1>
         <p>选择你的挑战，开启纯粹的游戏时光</p>
     </header>
 
     <div class="container">
-        <!-- 2048 卡片 -->
         <a href="2048.html" class="game-card card-2048">
             <div class="icon">🔢</div>
             <div class="title">2048</div>
@@ -148,7 +159,6 @@
             <div class="btn btn-2048">立即试玩</div>
         </a>
 
-        <!-- 贪吃蛇 卡片 -->
         <a href="snake.html" class="game-card card-snake">
             <div class="icon">🐍</div>
             <div class="title">贪吃蛇</div>
@@ -156,12 +166,18 @@
             <div class="btn btn-snake">进入狩猎</div>
         </a>
 
-        <!-- 新添加的俄罗斯方块卡片 -->
         <a href="square.html" class="game-card card-tetris">
             <div class="icon">🧱</div>
             <div class="title">俄罗斯方块</div>
             <p class="desc">堆叠消除，经典永恒。<br>在几何坠落中考验你的布局智慧。</p>
             <div class="btn btn-tetris">开始堆叠</div>
+        </a>
+
+        <a href="lianliankan.html" class="game-card card-match">
+            <div class="icon">🧩</div>
+            <div class="title">连连看</div>
+            <p class="desc">两点一线，寻觅相同。<br>在纵横交错的图阵中，考验你的眼疾手快。</p>
+            <div class="btn btn-match">消除连接</div>
         </a>
     </div>
 
