@@ -15,6 +15,7 @@
             /* 俄罗斯方块强调色：粉红 */
             --accent-match: #22d3ee;
             /* 连连看强调色：霓虹青/电光蓝 */
+            --accent-mine: #ff8c42;   /* 扫雷强调色：橙金色 */
         }
 
         body {
@@ -47,7 +48,7 @@
             flex-wrap: wrap;
             justify-content: center;
             padding: 2rem;
-            max-width: 1400px; /* 增加最大宽度以完美容纳4张卡片 */
+            max-width: 1400px; /* 增加最大宽度以完美容纳5张卡片 */
         }
 
         .game-card {
@@ -105,6 +106,10 @@
             border-color: var(--accent-match);
         }
 
+        .card-mine:hover {
+            border-color: var(--accent-mine);
+        }
+
         .btn {
             padding: 0.8rem 2rem;
             border-radius: 99px;
@@ -133,6 +138,11 @@
 
         .btn-match {
             background: var(--accent-match);
+            color: #000;
+        }
+
+        .btn-mine {
+            background: var(--accent-mine);
             color: #000;
         }
 
@@ -178,6 +188,14 @@
             <div class="title">连连看</div>
             <p class="desc">两点一线，寻觅相同。<br>在纵横交错的图阵中，考验你的眼疾手快。</p>
             <div class="btn btn-match">消除连接</div>
+        </a>
+
+        <!-- 新增扫雷游戏模块 -->
+        <a href="saolei.html" class="game-card card-mine">
+            <div class="icon">💣</div>
+            <div class="title">扫雷</div>
+            <p class="desc">经典逻辑推理，揭开每一块方格。<br>小心地雷，用智慧标记安全区域！</p>
+            <div class="btn btn-mine">开始扫雷</div>
         </a>
     </div>
 
